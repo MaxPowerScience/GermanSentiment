@@ -15,7 +15,7 @@ def main():
     # one specific item attribute
     print('Item #2 attribute:')
     d = items[0].childNodes
-
+sdfsdfsdf
     # all item attributes
     print(len(items))
 
