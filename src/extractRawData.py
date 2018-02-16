@@ -8,19 +8,13 @@ from xml.dom import minidom
 # Delivers the unpreprocessed raw data for all social media comments.
 def get_raw_data():
     # parse an xml file by name
-    dev_path = '../data/germeval/dev_v1.4.xml'
-    train_path = '../data/germeval/train_v1.4.xml'
+    data_path = '../data/germeval/data_v1.4.xml'
 
     # Read text and sentiment from xml
-    texts_dev, sentiments_dev = get_data_from_xml(dev_path)
-    texts_train, sentiments_train = get_data_from_xml(train_path)
-
-    # Concatenate arrays
-    texts = texts_dev + texts_train
-    sentiments = sentiments_dev + sentiments_train
+    texts_data, sentiments_data = get_data_from_xml(data_path)
 
     # Sort texts according to sentiment
-    sorted_texts, sorted_sentiments = sort_text_by_sentiment(texts, sentiments)
+    sorted_texts, sorted_sentiments = sort_text_by_sentiment(texts_data, sentiments_data)
 
     return sorted_texts, sorted_sentiments
 
@@ -57,10 +51,18 @@ def sort_text_by_sentiment(texts, sentiments):
     sorted_texts = sorted_positive_texts + sorted_negative_texts + sorted_neutral_texts
     sorted_sentiments = sorted_positive_sentiment + sorted_negative_sentiment + sorted_neutral_sentiment
 
+    print(len(sorted_positive_texts))
+    print(len(sorted_negative_texts))
+    print(len(sorted_neutral_texts))
+
+    #print(sorted_texts)
+    #print(sorted_sentiments)
+
     return sorted_texts, sorted_sentiments
 
 def main():
     print("Please execute some code")
+    get_raw_data()
 
 if __name__ == "__main__":
     main()

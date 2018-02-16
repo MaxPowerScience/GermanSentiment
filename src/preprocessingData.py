@@ -53,9 +53,14 @@ def preprocess_text():
         print(tag_emoticons(text, emoticons_dict))
 
 
+def read_word_list():
+    word_list = []
 
+    with open('../resources/wordList.txt', 'r', encoding='UTF-8') as file:
+        for line in file:
+            word_list.append(line.strip('\n'))
 
-    return text
+    return word_list
 
 def create_ids(num_files, max_seq_length, words_list, pos_texts, neg_texts, neu_texts, ids_name):
     words_list = np.load('../wordlist/wordsList.npy')
@@ -117,8 +122,9 @@ def create_ids(num_files, max_seq_length, words_list, pos_texts, neg_texts, neu_
     return ids
 
 def main():
-    preprocess_text()
+    #preprocess_text()
     #get_word_list()
+    read_word_list()
 
 if __name__ == "__main__":
     main()
