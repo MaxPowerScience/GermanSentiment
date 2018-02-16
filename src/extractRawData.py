@@ -33,6 +33,20 @@ def get_data_from_xml(filepath):
 
     return texts, sentiments
 
+def sort_text_by_sentiment(texts, sentiments):
+    sortedPositiveTexts, sortedNegativeTexts, sortedNeutralTexts = [], [], []
+    sortedPositiveSentiment, sortedNegativeSentiment, sortedNeutralSentiment = [], [], []
+
+    for idx, text in enumerate(texts):
+        if sentiments[idx] == 'positive':
+            sortedTexts.append(text)
+            sortedSentiment.append(sentiments[idx])
+
+
+
+
+
+
 def main():
     print("Please execute some code")
 
