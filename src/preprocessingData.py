@@ -14,22 +14,25 @@ def get_word_list():
         for word in words:
             print(word.strip('\'"?!,.:'))
 
+# Reads all information about latin only emoticons
 def read_emoticons():
-    emoticonsPath = '../resources/emoticonsWithSentiment.csv'
+    emoticons_path = '../resources/emoticonsWithSentiment.csv'
+
     emoticons = []
+    emoticons_tags = []
     sentiments = []
 
-    with open(emoticonsPath, 'rt', encoding='UTF-8') as csvfile:
+    with open(emoticons_path, 'rt', encoding='UTF-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         for row in reader:
-            numberOfRowValue = len(row)
             emoticons.append(row[0])
-            if numberOfRowValue == 2:
-                sentiments.append(row[1])
+            if len(row) == 3:
+                emoticons_tags.append(row[1])
+                sentiments.append(row[2])
             else:
-                sentiments.append([row[1], row[2]])
+                sentiments.append([row[2], row[3]])
 
-    return  emoticons, sentiments
+    return  emoticons, emoticons_tags, sentiments
 
 def main():
     read_emoticons()
