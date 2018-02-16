@@ -1,33 +1,40 @@
-"""Author:Manuel Reinbold, Maximilian Renk
+"""Author: Manuel Reinbold, Maximilian Renk
 Date: 21/11/17
 Version: 1.0
 """
 
 from xml.dom import minidom
 
-def main():
+def get_raw_data():
     # parse an xml file by name
-    mydoc = minidom.parse('C:/Users/Max/Downloads/train_v1.4.xml')
-    mydoc = minidom.parse('C:/Users/Max/Downloads/dev_v1.4.xml')
+    dev_path = '../data/germeval/dev_v1.4.xml'
+    train_path = '../data/germeval/train_v1.4.xml'
 
-    items = mydoc.getElementsByTagName('Document')
+    # Read text and sentiment from xml
+    texts_dev, sentiments_dev = get_data_from_xml(dev_path)
+    texts_train, sentiments_train = get_data_from_xml(train_path)
 
-    # one specific item attribute
-    print('Item #2 attribute:')
-    d = items[0].childNodes
+    # Concatenate arrays
+    texts = texts_dev + texts_train
+    sentiments = sentiments_dev + sentiments_train
 
-    # all item attributes
-    print(len(items))
+    return texts, sentiments
 
-    print('\nAll attributes:')
-    for elem in items:
-        for child in elem.childNodes:
+def get_data_from_xml(filepath):
+    my_doc = minidom.parse(filepath)
+    document_items = my_doc.getElementsByTagName('Document')
+    texts, sentiments = [], []
+    for document in document_items:
+        for child in document.childNodes:
             if child.nodeName == 'sentiment':
-                print(child.firstChild.data)
-                a = 3
+                sentiments.append(child.firstChild.data)
             if child.nodeName == 'text':
-                print(child.firstChild.data)
+                texts.append(child.firstChild.data)
 
+    return texts, sentiments
+
+def main():
+    print("Please execute some code")
 
 if __name__ == "__main__":
     main()
