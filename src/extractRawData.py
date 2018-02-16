@@ -8,20 +8,13 @@ from xml.dom import minidom
 # Delivers the unpreprocessed raw data for all social media comments.
 def get_raw_data():
     # parse an xml file by name
-    dev_path = '../data/germeval/dev_v1.4.xml'
-    train_path = '../data/germeval/train_v1.4.xml'
+    data_path = '../data/germeval/data_v1.4.xml'
 
     # Read text and sentiment from xml
-    texts_dev, sentiments_dev = get_data_from_xml(dev_path)
-    texts_train, sentiments_train = get_data_from_xml(train_path)
-
-    # Concatenate arrays
-    texts = texts_dev + texts_train
-    sentiments = sentiments_dev + sentiments_train
+    texts_data, sentiments_data = get_data_from_xml(data_path)
 
     # Sort texts according to sentiment
-    return sort_text_by_sentiment(texts, sentiments)
-
+    return sort_text_by_sentiment(texts_data, sentiments_data)
 
 # Reads data from a xml file and return text and sentiment of social media comment.
 def get_data_from_xml(filepath):

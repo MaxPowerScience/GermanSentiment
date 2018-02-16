@@ -1,8 +1,12 @@
 import os
 import tflearn
 import datetime
+import sklearn
+import numpy as np
 
 def create_perceptron():
+    # ZAHLEN ANPASSEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     net = tflearn.input_data([None, 40])
     net = tflearn.embedding(net, input_dim=400000, output_dim=128)
     net = tflearn.fully_connected(net, 100, activation='relu')
@@ -32,6 +36,30 @@ def train_network(trainX, trainY):
 
     model.save(save_path)
     return model
+
+def test_model(testX, testY, load, network_name='', snapshot_name='', model=None):
+    if load:
+        model = create_perceptron()
+        load_folder = '../models/perceptron/'
+        load_path = load_folder + snapshot_name
+        model.load(load_path)
+        print('Snapshot loaded')
+
+    # Transform acutal class labels (1 for positiv and 0 for negative)
+    actualClasses = []
+    for test in testY:
+        actualClasses.append(1) if test[0] == 1 else actualClasses.append(0)
+
+    # Predict class for test data
+    predictions = (np.array(model.predict(testX))[:,1] >= 0.5).astype(np.int_)
+
+    # Print classification report and confusion matrix
+    print(sklearn.metrics.classification_report(actualClasses, predictions))
+    print(sklearn.metrics.confusion_matrix(actualClasses, predictions))
+
+    # Accuracy of test prediction
+    test_accuracy = np.mean(predictions == testY[:,1], axis=0)
+    print("Test accuracy: ", test_accuracy)
 
 def main():
     create_perceptron()
