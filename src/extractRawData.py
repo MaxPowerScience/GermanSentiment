@@ -20,9 +20,8 @@ def get_raw_data():
     sentiments = sentiments_dev + sentiments_train
 
     # Sort texts according to sentiment
-    sorted_texts, sorted_sentiments = sort_text_by_sentiment(texts, sentiments)
+    return sort_text_by_sentiment(texts, sentiments)
 
-    return sorted_texts, sorted_sentiments
 
 # Reads data from a xml file and return text and sentiment of social media comment.
 def get_data_from_xml(filepath):
@@ -57,7 +56,7 @@ def sort_text_by_sentiment(texts, sentiments):
     sorted_texts = sorted_positive_texts + sorted_negative_texts + sorted_neutral_texts
     sorted_sentiments = sorted_positive_sentiment + sorted_negative_sentiment + sorted_neutral_sentiment
 
-    return sorted_texts, sorted_sentiments
+    return sorted_texts, sorted_positive_texts, sorted_negative_sentiment, sorted_neutral_texts, sorted_sentiments
 
 def main():
     print("Please execute some code")
