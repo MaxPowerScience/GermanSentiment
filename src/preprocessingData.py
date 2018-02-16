@@ -1,11 +1,13 @@
 import csv
+import re
+import numpy as np
 from extractRawData import get_raw_data
 
 def get_word_list():
     texts, sentiments = get_raw_data()
 
     #Read Emoticions from file
-    emoticons, emoticonSentiment = read_emoticons()
+    emoticons, emoticon_sentiment = read_emoticons()
 
     #Emoticons handling
 
@@ -33,6 +35,82 @@ def read_emoticons():
                 sentiments.append([row[2], row[3]])
 
     return  emoticons, emoticons_tags, sentiments
+
+
+def tag_emoticons(text, emoticons, emoticon_tags):
+    # You can dispence the extra variable and create an anonymous
+    # zipped list:
+    emoticons_dict = dict(zip(emoticons, emoticon_tags))
+    split = text.split()
+    for word in split:
+        if word in emoticons_dict:
+            text = re.sub(word, emoticons_dict.get(word), text)
+
+    return text
+
+def preprocess_text(text):
+    tag_emoticons(text)
+
+    return text
+
+def create_ids(num_files, max_seq_length, words_list, pos_texts, neg_texts, neu_texts, ids_name):
+    words_list = np.load('../wordlist/wordsList.npy')
+    words_list = words_list.tolist()
+
+    unknown_word = 1924893
+
+    ids = np.zeros((num_files, max_seq_length), dtype='int32')
+    file_counter = 0
+    for pos_text in pos_texts:
+        index_counter = 0
+        cleaned_text = preprocess_text(pos_text)
+        split = cleaned_text.split()
+        for word in split:
+            try:
+                ids[file_counter][index_counter] = words_list.index(word)
+            except ValueError:
+                ids[file_counter][index_counter] = unknown_word  # Vector for unkown words
+            index_counter = index_counter + 1
+            if index_counter >= max_seq_length:
+                break
+        file_counter = file_counter + 1
+        print("Positive ")
+        print(file_counter)
+
+    for neg_text in neg_texts:
+        index_counter = 0
+        cleaned_text = preprocess_text(neg_text)
+        split = cleaned_text.split()
+        for word in split:
+            try:
+                ids[file_counter][index_counter] = words_list.index(word)
+            except ValueError:
+                ids[file_counter][index_counter] = unknown_word  # Vector for unkown words
+            index_counter = index_counter + 1
+            if index_counter >= max_seq_length:
+                break
+        file_counter = file_counter + 1
+        print("Negative ")
+        print(file_counter)
+
+    for neu_text in neu_texts:
+        index_counter = 0
+        cleaned_text = preprocess_text(neu_text)
+        split = cleaned_text.split()
+        for word in split:
+            try:
+                ids[file_counter][index_counter] = words_list.index(word)
+            except ValueError:
+                ids[file_counter][index_counter] = unknown_word  # Vector for unknown words
+            if index_counter >= max_seq_length:
+                break
+        file_counter = file_counter + 1
+        print("Neutral ")
+        print(file_counter)
+
+    np.save(ids_name, ids)
+
+    return ids
 
 def main():
     read_emoticons()
