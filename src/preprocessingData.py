@@ -3,19 +3,6 @@ import re
 import numpy as np
 from extractRawData import get_raw_data
 
-def get_word_list():
-    texts, sentiments = get_raw_data()
-
-    #Read Emoticions from file
-    emoticons, emoticon_sentiment = read_emoticons()
-
-    #Emoticons handling
-
-    for text in texts:
-        words = text.split()
-        for word in words:
-            print(word.strip('\'"?!,.:'))
-
 # Reads all information about latin only emoticons
 def read_emoticons():
     emoticons_path = '../resources/emoticonsWithSentiment.csv'
@@ -37,19 +24,36 @@ def read_emoticons():
     return  emoticons, emoticons_tags, sentiments
 
 
-def tag_emoticons(text, emoticons, emoticon_tags):
-    # You can dispence the extra variable and create an anonymous
-    # zipped list:
-    emoticons_dict = dict(zip(emoticons, emoticon_tags))
+def tag_emoticons(text, emoticons_dict):
+
     split = text.split()
     for word in split:
         if word in emoticons_dict:
-            text = re.sub(word, emoticons_dict.get(word), text)
+            text = text.replace(word, emoticons_dict.get(word))
 
     return text
 
-def preprocess_text(text):
-    tag_emoticons(text)
+def preprocess_text():
+    texts, sentiments = get_raw_data()
+
+    # Read Emoticions from file
+    emoticons, emoticons_tags, _ = read_emoticons()
+
+    print(emoticons)
+    print(emoticons_tags)
+
+    # Emoticons handling
+
+    # Schleife über alle Daten
+    # Einen Datensatz
+    # Schleife über datensatz
+    # Entfernst überflüssig und ersetzt durch tags
+    emoticons_dict = dict(zip(emoticons, emoticons_tags))
+    for text in texts:
+        print(tag_emoticons(text, emoticons_dict))
+
+
+
 
     return text
 
@@ -113,7 +117,7 @@ def create_ids(num_files, max_seq_length, words_list, pos_texts, neg_texts, neu_
     return ids
 
 def main():
-    read_emoticons()
+    preprocess_text()
     #get_word_list()
 
 if __name__ == "__main__":
