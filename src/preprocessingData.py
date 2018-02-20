@@ -38,8 +38,10 @@ def tag_emoticons(text, emoticons_dict):
 
 def preprocess_texts(texts):
     cleaned_texts = []
+    emoticons, emoticons_tags, _ = read_emoticons()
+    emoticons_dict = dict(zip(emoticons, emoticons_tags))
     for text in texts:
-        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text))))
+        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text, emoticons_dict))))
 
     return cleaned_texts
 
@@ -87,7 +89,7 @@ def get_feature_string(text):
         #check if the word stats with an alphabet
         val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", w)
         #ignore if it is a stop word
-        if(w in get_stop_word_list('stopwords.txt') or val is None):
+        if(w in get_stop_word_list('../resources/stoppWords.txt') or val is None):
             continue
         else:
             feature_string += w.lower() + " "
