@@ -139,6 +139,7 @@ def read_word_list():
 def get_ids_matrix(texts):
     ids_name = 'idsMatrix'
     path_id_matrix = '../resources/' + ids_name + '.npy'
+    print('Test')
 
     if os.path.isfile(path_id_matrix):
         ids = np.load(path_id_matrix)
