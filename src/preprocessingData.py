@@ -136,14 +136,14 @@ def read_word_list():
 # Load or create ids matrix
 def get_ids_matrix(texts):
     ids_name = 'idsMatrix'
-
     path_id_matrix = '../resources/' + ids_name + '.npy'
+
     if os.path.isfile(path_id_matrix):
         ids = np.load(path_id_matrix)
     else:
         max_seq_length = 40
         cleaned_texts = preprocess_texts(texts)
-        ids = create_ids(cleaned_texts, ids_name, max_seq_length)
+        ids = create_ids(cleaned_texts, path_id_matrix, max_seq_length)
 
     return ids
 
