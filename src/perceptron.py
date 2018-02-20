@@ -11,13 +11,13 @@ def create_perceptron(max_sequence_length, dict_size):
     net = tflearn.fully_connected(net, 100, activation='relu')
     net = tflearn.fully_connected(net, 20, activation='relu')
     net = tflearn.fully_connected(net, 3, activation='softmax')
-    net = tflearn.regression(net, optimizer='adam', learning_rate=0.1,
+    net = tflearn.regression(net, optimizer='sgd', learning_rate=0.1,
                              loss='categorical_crossentropy')
 
     return tflearn.DNN(net, tensorboard_verbose=0, tensorboard_dir='../tensorboard/tensorboard_fully')
 
 def train_network(trainX, trainY, model):
-    batch_size = 64
+    batch_size = 32
 
     save_folder = '../models/perceptron/'
     save_name = 'perceptron_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.tfl'
@@ -27,7 +27,7 @@ def train_network(trainX, trainY, model):
 
     save_path = save_folder + save_name
 
-    n_epoch = 20
+    n_epoch = 100
     for i in range(0,n_epoch):
         trainX, trainY = tflearn.data_utils.shuffle(trainX, trainY)
         model.fit(trainX, trainY, validation_set=0.1, show_metric=True, batch_size=batch_size, n_epoch=1)
@@ -35,13 +35,7 @@ def train_network(trainX, trainY, model):
     model.save(save_path)
     return model
 
-def test_model(testX, testY, load, network_name='', snapshot_name='', model=None):
-    if load:
-        model = create_perceptron()
-        load_folder = '../models/perceptron/'
-        load_path = load_folder + snapshot_name
-        model.load(load_path)
-        print('Snapshot loaded')
+def test_network(testX, testY, model):
 
     # Transform acutal class labels (1 for positiv and 0 for negative)
     actualClasses = []
@@ -49,11 +43,13 @@ def test_model(testX, testY, load, network_name='', snapshot_name='', model=None
         actualClasses.append(1) if test[0] == 1 else actualClasses.append(0)
 
     # Predict class for test data
+
+    pred = np.array(model.predict(testX))
     predictions = (np.array(model.predict(testX))[:,1] >= 0.5).astype(np.int_)
 
     # Print classification report and confusion matrix
-    print(sklearn.metrics.classification_report(actualClasses, predictions))
-    print(sklearn.metrics.confusion_matrix(actualClasses, predictions))
+    #print(sklearn.metrics.classification_report(actualClasses, predictions))
+    #print(sklearn.metrics.confusion_matrix(actualClasses, predictions))
 
     # Accuracy of test prediction
     test_accuracy = np.mean(predictions == testY[:,1], axis=0)
