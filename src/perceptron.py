@@ -4,32 +4,30 @@ import datetime
 import sklearn
 import numpy as np
 
-def create_perceptron():
-    # ZAHLEN ANPASSEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def create_perceptron(max_sequence_length, dict_size):
 
-    net = tflearn.input_data([None, 40])
-    net = tflearn.embedding(net, input_dim=400000, output_dim=128)
+    net = tflearn.input_data([None, max_sequence_length])
+    net = tflearn.embedding(net, input_dim=dict_size+1, output_dim=128)
     net = tflearn.fully_connected(net, 100, activation='relu')
     net = tflearn.fully_connected(net, 20, activation='relu')
-    net = tflearn.fully_connected(net, 2, activation='softmax')
-    net = tflearn.regression(net, optimizer='sgd', learning_rate=0.1,
+    net = tflearn.fully_connected(net, 3, activation='softmax')
+    net = tflearn.regression(net, optimizer='adam', learning_rate=0.1,
                              loss='categorical_crossentropy')
 
     return tflearn.DNN(net, tensorboard_verbose=0, tensorboard_dir='../tensorboard/tensorboard_fully')
 
-def train_network(trainX, trainY):
+def train_network(trainX, trainY, model):
     batch_size = 64
 
-    model = create_perceptron()
-    save_folder = '../models/fully/'
-    save_name = 'fully_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.tfl'
+    save_folder = '../models/perceptron/'
+    save_name = 'perceptron_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '.tfl'
 
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
 
     save_path = save_folder + save_name
 
-    n_epoch = 3
+    n_epoch = 20
     for i in range(0,n_epoch):
         trainX, trainY = tflearn.data_utils.shuffle(trainX, trainY)
         model.fit(trainX, trainY, validation_set=0.1, show_metric=True, batch_size=batch_size, n_epoch=1)

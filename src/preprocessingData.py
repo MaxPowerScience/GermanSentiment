@@ -96,14 +96,8 @@ def get_feature_string(text):
 
     return feature_string.strip()
 
-def prepare_data():
-    all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
-
-    return separate_test_and_training_data(pos_texts, neu_texts, neg_texts, all_texts)
-
-def create_ids(cleaned_texts, ids_name, max_seq_length):
-    words_list = read_word_list()
-    unknown_word = 1924893
+def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
+    unknown_word = len(dictionary)
 
     ids = np.zeros((len(cleaned_texts), max_seq_length), dtype='int32')
     file_counter = 0
@@ -112,7 +106,7 @@ def create_ids(cleaned_texts, ids_name, max_seq_length):
         split = text.split()
         for word in split:
             try:
-                ids[file_counter][index_counter] = words_list.index(word)
+                ids[file_counter][index_counter] = dictionary.index(word)
             except ValueError:
                 ids[file_counter][index_counter] = unknown_word  # Vector for unkown words
             index_counter = index_counter + 1
@@ -136,25 +130,34 @@ def read_word_list():
     return word_list
 
 # Load or create ids matrix
-def get_ids_matrix(texts):
+def get_ids_matrix(texts, dictionary):
     ids_name = 'idsMatrix'
     path_id_matrix = '../resources/' + ids_name + '.npy'
-    print('Test')
-
+    max_seq_length = 0
     if os.path.isfile(path_id_matrix):
         ids = np.load(path_id_matrix)
     else:
-        max_seq_length = 40
         cleaned_texts = preprocess_texts(texts)
-        ids = create_ids(cleaned_texts, path_id_matrix, max_seq_length)
-
+        max_seq_length = get_max_sequence_length(cleaned_texts)
+        ids = create_ids(cleaned_texts, path_id_matrix, max_seq_length, dictionary)
     return ids
 
-def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, all_texts):
+def get_max_sequence_length(cleaned_texts):
+    length_of_texts = []
+
+    for text in cleaned_texts:
+        text_split = text.split()
+        text_split_length = len(text_split)
+        length_of_texts.append(text_split_length)
+
+    max_sequence_length = round(np.percentile(length_of_texts, 100))
+
+    return max_sequence_length
+
+def separate_test_and_training_data(pos_texts, neg_texts, neu_texts, ids):
 
     # Split data in train and test
     percentage_train_data = 0.8
-    percentage_test_data = 1 - percentage_train_data
 
     number_of_positive_train = round(len(pos_texts) * percentage_train_data)
     number_of_negative_train = round(len(neg_texts) * percentage_train_data)
@@ -179,8 +182,6 @@ def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, all_texts):
     lower_bound_neu_test = upper_bound_neu_train + 1
     upper_bound_neu_test = lower_bound_neu_test + number_of_neutral_test
 
-    ids = get_ids_matrix(all_texts)
-
     positive_train = ids[lower_bound_pos_train:upper_bound_pos_train]
     positive_test = ids[lower_bound_pos_test:upper_bound_pos_test]
     negative_train = ids[lower_bound_neg_train:upper_bound_neg_train]
@@ -188,25 +189,25 @@ def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, all_texts):
     neutral_train = ids[lower_bound_neu_train:upper_bound_neu_train]
     neutral_test = ids[lower_bound_neu_test:upper_bound_neu_test]
 
-    pos_labels_train = [1,0,0] * len(positive_train)
-    pos_labels_test = [1,0,0] * len(positive_test)
-    neg_labels_train = [0,0,1] * len(negative_train)
-    neg_labels_test = [0,0,1] * len(negative_test)
-    neu_labels_train = [0,1,0] * len(neutral_train)
-    neu_labels_test = [0,1,0] * len(neutral_test)
+    pos_labels_train = [[1,0,0]] * len(positive_train)
+    pos_labels_test = [[1,0,0]] * len(positive_test)
+    neg_labels_train = [[0,0,1]] * len(negative_train)
+    neg_labels_test = [[0,0,1]] * len(negative_test)
+    neu_labels_train = [[0,1,0]] * len(neutral_train)
+    neu_labels_test = [[0,1,0]] * len(neutral_test)
 
     trainX = np.concatenate([positive_train, negative_train, neutral_train])
-    #trainY = to_categorical(pos_labels_train + neg_labels_train + neu_labels_train, nb_classes=3)
     trainY = np.concatenate([pos_labels_train, neg_labels_train, neu_labels_train])
 
     testX = np.concatenate([positive_test, negative_test, neutral_test])
-    #testY = to_categorical(pos_labels_test + neg_labels_test + neu_labels_test, nb_classes=3)
     testY = np.concatenate([pos_labels_test, neg_labels_test, neu_labels_test])
 
     return trainX, trainY, testX, testY
 
 def main():
-    prepare_data()
+    all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
+    get_ids_matrix(all_texts)
+    #prepare_data()
     #get_word_list()
 
 if __name__ == "__main__":
