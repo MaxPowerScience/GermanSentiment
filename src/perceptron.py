@@ -10,7 +10,7 @@ def create_perceptron(max_sequence_length, dict_size):
     net = tflearn.embedding(net, input_dim=dict_size+1, output_dim=128)
     net = tflearn.fully_connected(net, 100, activation='relu')
     net = tflearn.fully_connected(net, 20, activation='relu')
-    net = tflearn.fully_connected(net, 3, activation='softmax')
+    net = tflearn.fully_connected(net, 2, activation='softmax')
     net = tflearn.regression(net, optimizer='sgd', learning_rate=0.1,
                              loss='categorical_crossentropy')
 
@@ -27,7 +27,7 @@ def train_network(trainX, trainY, model):
 
     save_path = save_folder + save_name
 
-    n_epoch = 100
+    n_epoch = 500
     for i in range(0,n_epoch):
         trainX, trainY = tflearn.data_utils.shuffle(trainX, trainY)
         model.fit(trainX, trainY, validation_set=0.1, show_metric=True, batch_size=batch_size, n_epoch=1)

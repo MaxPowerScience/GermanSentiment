@@ -151,59 +151,62 @@ def get_max_sequence_length(cleaned_texts):
         text_split_length = len(text_split)
         length_of_texts.append(text_split_length)
 
-    max_sequence_length = round(np.percentile(length_of_texts, 100))
+    max_sequence_length = round(np.percentile(length_of_texts, 99))
 
     return max_sequence_length
 
-def separate_test_and_training_data(pos_texts, neg_texts, neu_texts, ids):
+def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids):
 
     # Split data in train and test
     percentage_train_data = 1
 
-    number_of_positive_train = round(len(pos_texts) * percentage_train_data)
+    #number_of_positive_train = round(len(pos_texts) * percentage_train_data)
     number_of_negative_train = round(len(neg_texts) * percentage_train_data)
     number_of_neutral_train = round(len(neu_texts) * percentage_train_data)
 
-    number_of_positive_test = len(pos_texts) - number_of_positive_train
+    #number_of_positive_test = len(pos_texts) - number_of_positive_train
     number_of_negative_test = len(neg_texts) - number_of_negative_train
     number_of_neutral_test = len(neu_texts) - number_of_neutral_train
 
-    lower_bound_pos_train = 0
-    upper_bound_pos_train = lower_bound_pos_train + number_of_positive_train
-    lower_bound_pos_test = upper_bound_pos_train + 1
-    upper_bound_pos_test = lower_bound_pos_test + number_of_positive_test
+    #lower_bound_pos_train = 0
+    #upper_bound_pos_train = lower_bound_pos_train + number_of_positive_train
+    #lower_bound_pos_test = upper_bound_pos_train + 1
+    #upper_bound_pos_test = lower_bound_pos_test + number_of_positive_test
 
     lower_bound_neg_train = 0
-    #upper_bound_neg_train = lower_bound_neg_train + number_of_negative_train
-    upper_bound_neg_train = lower_bound_neg_train + number_of_positive_train
+    upper_bound_neg_train = lower_bound_neg_train + number_of_negative_train
     lower_bound_neg_test = upper_bound_neg_train + 1
     upper_bound_neg_test = lower_bound_neg_test + number_of_negative_test
 
     lower_bound_neu_train = 0
     #upper_bound_neu_train = lower_bound_neu_train + number_of_neutral_train
-    upper_bound_neu_train = lower_bound_neu_train + number_of_positive_train
+    upper_bound_neu_train = lower_bound_neu_train + number_of_negative_train
     lower_bound_neu_test = upper_bound_neu_train + 1
     upper_bound_neu_test = lower_bound_neu_test + number_of_neutral_test
 
-    positive_train = ids[lower_bound_pos_train:upper_bound_pos_train]
-    positive_test = ids[lower_bound_pos_test:upper_bound_pos_test]
+    #positive_train = ids[lower_bound_pos_train:upper_bound_pos_train]
+    #positive_test = ids[lower_bound_pos_test:upper_bound_pos_test]
     negative_train = ids[lower_bound_neg_train:upper_bound_neg_train]
     negative_test = ids[lower_bound_neg_test:upper_bound_neg_test]
     neutral_train = ids[lower_bound_neu_train:upper_bound_neu_train]
     neutral_test = ids[lower_bound_neu_test:upper_bound_neu_test]
 
-    pos_labels_train = [0] * len(positive_train)
-    pos_labels_test = [0] * len(positive_test)
-    neu_labels_train = [1] * len(neutral_train)
-    neu_labels_test = [1] * len(neutral_test)
-    neg_labels_train = [2] * len(negative_train)
-    neg_labels_test = [2] * len(negative_test)
+    #pos_labels_train = [0] * len(positive_train)
+    #pos_labels_test = [0] * len(positive_test)
+    neu_labels_train = [0] * len(neutral_train)
+    neu_labels_test = [0] * len(neutral_test)
+    neg_labels_train = [1] * len(negative_train)
+    neg_labels_test = [1] * len(negative_test)
 
-    trainX = np.concatenate([positive_train, neutral_train, negative_train])
-    trainY = to_categorical(np.concatenate([pos_labels_train, neu_labels_train, neg_labels_train]), nb_classes=3)
+    #trainX = np.concatenate([positive_train, neutral_train, negative_train])
+    trainX = np.concatenate([neutral_train, negative_train])
+    #trainY = to_categorical(np.concatenate([pos_labels_train, neu_labels_train, neg_labels_train]), nb_classes=3)
+    trainY = to_categorical(np.concatenate([neu_labels_train, neg_labels_train]), nb_classes=2)
 
-    testX = np.concatenate([positive_test, neutral_test, negative_test])
-    testY = to_categorical(np.concatenate([pos_labels_test, neu_labels_test, neg_labels_test]), nb_classes=3)
+    #testX = np.concatenate([positive_test, neutral_test, negative_test])
+    testX = np.concatenate([neutral_test, negative_test])
+    #testY = to_categorical(np.concatenate([pos_labels_test, neu_labels_test, neg_labels_test]), nb_classes=3)
+    testY = to_categorical(np.concatenate([neu_labels_test, neg_labels_test]), nb_classes=2)
 
     return trainX, trainY, testX, testY
 
