@@ -129,7 +129,7 @@ def stem_word_list(word_list):
     stemmer = nltk.stem.SnowballStemmer('german')
     stemmed_list = []
     i = 0
-    with open('../resources/wordListStemmed.txt', 'a', encoding='UTF-8') as file:
+    with open('../resources/wordListStemmed.txt', 'w', encoding='UTF-8') as file:
         for word in word_list:
             print(i)
             stemmed_word = stemmer.stem(word)
@@ -220,7 +220,7 @@ def separate_test_and_training_data(pos_texts, neg_texts, neu_texts, ids):
     return trainX, trainY, testX, testY
 
 def main():
-    #all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
+    all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
     #emoticons, emoticons_tags, _ = read_emoticons()
     #emoticons_dict = dict(zip(emoticons, emoticons_tags))
     #stop_words = get_stop_word_list('../resources/stopwords.txt')
