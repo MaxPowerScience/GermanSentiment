@@ -2,7 +2,6 @@ import csv
 import re
 import numpy as np
 import os
-import zipfile
 
 from tflearn.data_utils import to_categorical
 from extractRawData import get_raw_data
@@ -40,8 +39,9 @@ def preprocess_texts(texts):
     cleaned_texts = []
     emoticons, emoticons_tags, _ = read_emoticons()
     emoticons_dict = dict(zip(emoticons, emoticons_tags))
+    stop_words = get_stop_word_list('../resources/stopwords.txt')
     for text in texts:
-        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text, emoticons_dict))))
+        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text, emoticons_dict)), stop_words))
 
     return cleaned_texts
 
@@ -77,7 +77,7 @@ def replace_duplicate_characters(s):
     pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
     return pattern.sub(r"\1\1", s)
 
-def get_feature_string(text):
+def get_feature_string(text, stop_words):
     feature_string = ""
     #split text into words
     words = text.split()
@@ -89,7 +89,7 @@ def get_feature_string(text):
         #check if the word stats with an alphabet
         val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", w)
         #ignore if it is a stop word
-        if(w in get_stop_word_list('../resources/stoppWords.txt') or val is None):
+        if(w in stop_words or val is None):
             continue
         else:
             feature_string += w.lower() + " "
@@ -98,6 +98,7 @@ def get_feature_string(text):
 
 def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
     unknown_word = len(dictionary)
+    dictionaryset = set(dictionary)
 
     ids = np.zeros((len(cleaned_texts), max_seq_length), dtype='int32')
     file_counter = 0
@@ -105,10 +106,10 @@ def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
         index_counter = 0
         split = text.split()
         for word in split:
-            try:
+            if (word in dictionaryset):
                 ids[file_counter][index_counter] = dictionary.index(word)
-            except ValueError:
-                ids[file_counter][index_counter] = unknown_word  # Vector for unkown words
+            else:
+                ids[file_counter][index_counter] = unknown_word
             index_counter = index_counter + 1
             if index_counter >= max_seq_length:
                 break
@@ -138,7 +139,7 @@ def get_ids_matrix(texts, dictionary):
         ids = np.load(path_id_matrix)
     else:
         cleaned_texts = preprocess_texts(texts)
-        max_seq_length = get_max_sequence_length(cleaned_texts)
+        max_seq_length = int(get_max_sequence_length(cleaned_texts))
         ids = create_ids(cleaned_texts, path_id_matrix, max_seq_length, dictionary)
     return ids
 
