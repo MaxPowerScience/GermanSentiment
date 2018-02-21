@@ -2,6 +2,7 @@ import csv
 import re
 import numpy as np
 import os
+import nltk.stem
 
 from tflearn.data_utils import to_categorical
 from extractRawData import get_raw_data
@@ -26,39 +27,53 @@ def read_emoticons():
 
     return  emoticons, emoticons_tags, sentiments
 
-
-def tag_emoticons(text, emoticons_dict):
-    split = text.split()
-    for word in split:
-        if word in emoticons_dict:
-            text = text.replace(word, emoticons_dict.get(word))
-
-    return text
-
 def preprocess_texts(texts):
     cleaned_texts = []
     emoticons, emoticons_tags, _ = read_emoticons()
     emoticons_dict = dict(zip(emoticons, emoticons_tags))
     stop_words = get_stop_word_list('../resources/stopwords.txt')
+    stemmer = nltk.stem.SnowballStemmer('german')
     for text in texts:
-        cleaned_texts.append(get_feature_string(process_text(tag_emoticons(text, emoticons_dict)), stop_words))
+        cleaned_texts.append(process_text(text, emoticons_dict, stop_words, stemmer))
 
     return cleaned_texts
 
-def process_text(text):
-    #Convert to lower case
+def process_text(text, emoticons_dict, stop_words, stemmer):
+    processed_text = ''
+    # Convert list to set for faster lookup
+    stop_words = set(stop_words)
+
+    # Convert to lower case
     text = text.lower()
-    #Convert www.* or https?://* to URL
-    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))','URL',text)
-    #Convert @username to AT_USER
-    text = re.sub('@[^\s]+','AT_USER',text)
-    #Remove additional white spaces
+    # Convert www.* or https?://* to URL
+    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', 'URL', text)
+    # Convert @username to AT_USER
+    text = re.sub('@[^\s]+', 'AT_USER', text)
+    # Remove additional white spaces
     text = re.sub('[\s]+', ' ', text)
-    #Replace #word with word
+    # Replace #word with word
     text = re.sub(r'#([^\s]+)', r'\1', text)
-    #trim
+    # Trim
     text = text.strip('\'"')
-    return text
+
+    split_text = text.split()
+    for word in split_text:
+        if word in emoticons_dict:
+            word = word.replace(word, emoticons_dict.get(word))
+        else:
+            # Replace two or more with two occurrences
+            word = replace_duplicate_characters(word)
+            # Strip punctuation
+            word = word.strip('\'"?!,.')
+            # Check if the word stats with an alphabet
+            val = re.search(r"^[a-zA-ZäüöÄÜÖß][a-zA-ZäüöÄÜÖß0-9]*$", word)
+            #if (word in stop_words or val is None):
+            if (val is None):
+                continue
+        #word = stemmer.stem(word)
+        processed_text += word + ' '
+
+    return processed_text
 
 def get_stop_word_list(stop_word_list_file_name):
     #read the stopwords file and build a list
@@ -76,25 +91,6 @@ def replace_duplicate_characters(s):
     #look for 2 or more repetitions of character and replace with the character itself
     pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
     return pattern.sub(r"\1\1", s)
-
-def get_feature_string(text, stop_words):
-    feature_string = ""
-    #split text into words
-    words = text.split()
-    for w in words:
-        #replace two or more with two occurrences
-        w = replace_duplicate_characters(w)
-        #strip punctuation
-        w = w.strip('\'"?!,.')
-        #check if the word stats with an alphabet
-        val = re.search(r"^[a-zA-Z][a-zA-Z0-9]*$", w)
-        #ignore if it is a stop word
-        if(w in stop_words or val is None):
-            continue
-        else:
-            feature_string += w.lower() + " "
-
-    return feature_string.strip()
 
 def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
     unknown_word = len(dictionary)
@@ -120,7 +116,6 @@ def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
 
     return ids
 
-
 def read_word_list():
     word_list = []
 
@@ -130,9 +125,26 @@ def read_word_list():
 
     return word_list
 
+def stem_word_list(word_list):
+    stemmer = nltk.stem.SnowballStemmer('german')
+    stemmed_list = []
+    i = 0
+    with open('../resources/wordListStemmed.txt', 'a', encoding='UTF-8') as file:
+        for word in word_list:
+            print(i)
+            stemmed_word = stemmer.stem(word)
+            if not stemmed_word in stemmed_list:
+                stemmed_list.append(stemmed_word)
+                file.write("%s\n" % stemmed_word)
+            i = i + 1
+
+    print('length stemmed word list %d', len(stemmed_list))
+    return stemmed_list
+
+
 # Load or create ids matrix
 def get_ids_matrix(texts, dictionary):
-    ids_name = 'idsMatrix'
+    ids_name = 'idsMatrixStem'
     path_id_matrix = '../resources/' + ids_name + '.npy'
     max_seq_length = 0
     if os.path.isfile(path_id_matrix):
@@ -151,7 +163,7 @@ def get_max_sequence_length(cleaned_texts):
         text_split_length = len(text_split)
         length_of_texts.append(text_split_length)
 
-    max_sequence_length = round(np.percentile(length_of_texts, 100))
+    max_sequence_length = round(np.percentile(length_of_texts, 99))
 
     return max_sequence_length
 
@@ -208,12 +220,18 @@ def separate_test_and_training_data(pos_texts, neg_texts, neu_texts, ids):
     return trainX, trainY, testX, testY
 
 def main():
-    all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
-    dictionary = read_word_list()
-    ids = get_ids_matrix(all_texts, dictionary)
-    trainX, trainY, testX, testY = separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids)
+    #all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
+    #emoticons, emoticons_tags, _ = read_emoticons()
+    #emoticons_dict = dict(zip(emoticons, emoticons_tags))
+    #stop_words = get_stop_word_list('../resources/stopwords.txt')
+    #stemmer = nltk.stem.SnowballStemmer('german')
+    #text = 'Fußballspieler'
+    #print(process_text(text, emoticons_dict, stop_words, stemmer))
+    #dictionary = read_word_list()
+    #ids = get_ids_matrix(all_texts, dictionary)
+    #trainX, trainY, testX, testY = separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids)
 
-    get_ids_matrix(all_texts)
+    #get_ids_matrix(all_texts)
     #prepare_data()
     #get_word_list()
 
