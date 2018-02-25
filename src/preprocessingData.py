@@ -3,6 +3,7 @@ import re
 import numpy as np
 import os
 import nltk.stem
+import pickle
 
 from tflearn.data_utils import to_categorical
 from extractRawData import get_raw_data
@@ -67,8 +68,8 @@ def process_text(text, emoticons_dict, stop_words, stemmer):
             word = word.strip('\'"?!,.')
             # Check if the word stats with an alphabet
             val = re.search(r"^[a-zA-ZäüöÄÜÖß][a-zA-ZäüöÄÜÖß0-9]*$", word)
-            #if (word in stop_words or val is None):
-            if (val is None):
+            if (word in stop_words or val is None):
+            #if (val is None):
                 continue
         #word = stemmer.stem(word)
         processed_text += word + ' '
@@ -117,13 +118,53 @@ def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
     return ids
 
 def read_word_list():
-    word_list = []
 
-    with open('../resources/wordList.txt', 'r', encoding='UTF-8') as file:
-        for line in file:
-            word_list.append(line.strip('\n'))
+    word_frequency = 0
 
-    return word_list
+    word_list_in_dict = pickle.load(open("../resources/wordList.pickle", "rb"), encoding='UTF-8')
+    word_list = [''] * get_word_list_length(word_list_in_dict, word_frequency)
+
+    for key, value in word_list_in_dict.items():
+        if value[1] >= word_frequency:
+            word_list[value[0]] = key
+
+    #Insert 0 at first index for no word in ids matrix
+    word_list.insert(0,0)
+
+    print(word_list[0])
+    print(len(word_list))
+    print(word_list[len(word_list)-1])
+
+    #np.save('../resources/wordListFromDic.npy', word_list)
+
+    #word_list = []
+    #with open('../resources/wordList.txt', 'r', encoding='UTF-8') as file:
+    #    for line in file:
+    #        word_list.append(line.strip('\n'))
+
+    word_vectors = np.load('../resources/wordVectors.npy')
+
+    print(len(word_vectors))
+    print(word_vectors[0])
+
+    zero_vector = np.zeros((1, len(word_vectors[0])), dtype='int32')
+    word_vectors = np.insert(word_vectors, 0, zero_vector, 0)
+
+    print(len(word_vectors))
+    print(word_vectors[0])
+    print(word_vectors[1])
+    print(word_vectors[len(word_vectors)-1])
+
+    return word_list, word_vectors
+
+def get_word_list_length(word_list, frequency):
+    length = 0
+
+    for key, value in word_list.items():
+        if value[1] >= frequency:
+            length += 1
+
+    return length
 
 def stem_word_list(word_list):
     stemmer = nltk.stem.SnowballStemmer('german')
@@ -144,7 +185,7 @@ def stem_word_list(word_list):
 
 # Load or create ids matrix
 def get_ids_matrix(texts, dictionary):
-    ids_name = 'idsMatrixStem'
+    ids_name = 'idsMatrix'
     path_id_matrix = '../resources/' + ids_name + '.npy'
     max_seq_length = 0
     if os.path.isfile(path_id_matrix):
@@ -165,9 +206,11 @@ def get_max_sequence_length(cleaned_texts):
 
     max_sequence_length = round(np.percentile(length_of_texts, 99))
 
+    max_sequence_length = 50
+
     return max_sequence_length
 
-def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids):
+def separate_test_and_training_data(pos_texts, neg_texts, neu_texts, ids):
 
     # Split data in train and test
     percentage_train_data = 1
@@ -194,7 +237,7 @@ def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids):
     #upper_bound_neu_train = lower_bound_neu_train + number_of_neutral_train
     upper_bound_neu_train = lower_bound_neu_train + number_of_negative_train
     lower_bound_neu_test = upper_bound_neu_train + 1
-    upper_bound_neu_test = lower_bound_neu_test + number_of_neutral_test
+    upper_bound_neu_test = lower_bound_neu_test + number_of_negative_test
 
     #positive_train = ids[lower_bound_pos_train:upper_bound_pos_train]
     #positive_test = ids[lower_bound_pos_test:upper_bound_pos_test]
@@ -202,6 +245,14 @@ def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids):
     negative_test = ids[lower_bound_neg_test:upper_bound_neg_test]
     neutral_train = ids[lower_bound_neu_train:upper_bound_neu_train]
     neutral_test = ids[lower_bound_neu_test:upper_bound_neu_test]
+
+    #remove entries
+    #positive_train = remove_empty_entries(positive_train)
+    #positive_test = remove_empty_entries(positive_test)
+    negative_train = remove_empty_entries(negative_train)
+    negative_test = remove_empty_entries(negative_test)
+    neutral_train = remove_empty_entries(neutral_train)
+    neutral_test = remove_empty_entries(neutral_test)
 
     #pos_labels_train = [0] * len(positive_train)
     #pos_labels_test = [0] * len(positive_test)
@@ -220,7 +271,56 @@ def separate_test_and_training_data(pos_texts, neu_texts, neg_texts, ids):
     #testY = to_categorical(np.concatenate([pos_labels_test, neu_labels_test, neg_labels_test]), nb_classes=3)
     testY = to_categorical(np.concatenate([neu_labels_test, neg_labels_test]), nb_classes=2)
 
+    analyze_train_ids(trainX)
+
     return trainX, trainY, testX, testY
+
+def analyze_train_ids(trainX):
+
+    unknown_word = 0
+
+    for entry in trainX:
+        for value in entry:
+            if value > unknown_word:
+                unknown_word = value
+
+    print('Unknown word has index:', unknown_word)
+
+    counter_zeros = 0
+    counter_unknown = 0
+
+    for entry2 in trainX:
+        for value2 in entry2:
+            if value2 == 0:
+                counter_zeros += 1
+            if value2 == unknown_word:
+                counter_unknown += 1
+
+    number_train_data = len(trainX)
+    size_of_entry_train_data = len(trainX[0])
+
+    all_values = number_train_data * size_of_entry_train_data
+
+    print('Number of zeros values', counter_zeros)
+    print('Number of unknown words', counter_unknown)
+    print('Percentage zeros:', counter_zeros / all_values)
+    print('Percentage unknown:', counter_unknown / all_values)
+
+def remove_empty_entries(list):
+    cleaned_list = []
+    remove_entries_with_word_count = 0
+
+    for entry in list:
+        word_count = 0
+
+        for word in entry:
+            if (word != 0):
+                word_count = word_count + 1
+
+        if (word_count > remove_entries_with_word_count):
+            cleaned_list.append(entry)
+
+    return cleaned_list
 
 def main():
     all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
