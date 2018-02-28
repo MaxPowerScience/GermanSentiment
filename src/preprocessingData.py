@@ -41,8 +41,11 @@ def preprocess_texts(texts):
 
 def process_text(text, emoticons_dict, stop_words, stemmer):
     processed_text = ''
-    # Convert list to set for faster lookup
-    stop_words = set(stop_words)
+    with_emoticon_tags_text = ''
+    for word in text.split():
+        if word in emoticons_dict:
+            word = word.replace(word, emoticons_dict.get(word))
+        with_emoticon_tags_text += word + ' '
 
     # Convert to lower case
     text = text.lower()
@@ -57,20 +60,18 @@ def process_text(text, emoticons_dict, stop_words, stemmer):
     # Trim
     text = text.strip('\'"')
 
-    split_text = text.split()
+    # Convert list to set for faster lookup
+    stop_words = set(stop_words)
+    split_text = with_emoticon_tags_text.split()
     for word in split_text:
-        if word in emoticons_dict:
-            word = word.replace(word, emoticons_dict.get(word))
-        else:
-            # Replace two or more with two occurrences
-            word = replace_duplicate_characters(word)
-            # Strip punctuation
-            word = word.strip('\'"?!,.')
-            # Check if the word stats with an alphabet
-            val = re.search(r"^[a-zA-ZäüöÄÜÖß][a-zA-ZäüöÄÜÖß0-9]*$", word)
-            if (word in stop_words or val is None):
-            #if (val is None):
-                continue
+        # Replace two or more with two occurrences
+        word = replace_duplicate_characters(word)
+        # Strip punctuation
+        word = word.strip('\'"?!,.')
+        # Check if the word stats with an alphabet
+        val = re.search(r"^[a-zA-ZäüöÄÜÖß][a-zA-ZäüöÄÜÖß0-9]*$", word)
+        if (word in stop_words or val is None):
+            continue
         #word = stemmer.stem(word)
         processed_text += word + ' '
 
@@ -79,7 +80,7 @@ def process_text(text, emoticons_dict, stop_words, stemmer):
 def get_stop_word_list(stop_word_list_file_name):
     #read the stopwords file and build a list
     stop_words = []
-    fp = open(stop_word_list_file_name, 'r')
+    fp = open(stop_word_list_file_name, 'r', encoding='UTF-8')
     line = fp.readline()
     while line:
         word = line.strip()
@@ -118,6 +119,14 @@ def create_ids(cleaned_texts, ids_name, max_seq_length, dictionary):
     return ids
 
 def read_word_list():
+    word_list = []
+    with open('../resources/wordList.txt', 'r', encoding='UTF-8') as file:
+        for line in file:
+            word_list.append(line.strip('\n'))
+
+    return word_list
+
+def read_word_list_pretrained():
 
     word_frequency = 0
 
@@ -301,10 +310,18 @@ def analyze_train_ids(trainX):
 
     all_values = number_train_data * size_of_entry_train_data
 
+    length = 0
+    for entry in trainX:
+        for idx, word in enumerate(entry):
+            if (word == 0):
+                length += idx
+                break
+
     print('Number of zeros values', counter_zeros)
     print('Number of unknown words', counter_unknown)
     print('Percentage zeros:', counter_zeros / all_values)
     print('Percentage unknown:', counter_unknown / all_values)
+    print('Average Length TrainX:', length / len(trainX))
 
 def remove_empty_entries(list):
     cleaned_list = []
@@ -324,6 +341,7 @@ def remove_empty_entries(list):
 
 def main():
     all_texts, pos_texts, neu_texts, neg_texts, sentiments = get_raw_data()
+    read_word_list()
     #emoticons, emoticons_tags, _ = read_emoticons()
     #emoticons_dict = dict(zip(emoticons, emoticons_tags))
     #stop_words = get_stop_word_list('../resources/stopwords.txt')
